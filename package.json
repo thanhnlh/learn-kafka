@@ -1,0 +1,20 @@
+{
+  "name": "learn-kafka",
+  "version": "1.0.0",
+  "main": "dist/consumer.index.js",
+  "scripts": {    
+    "dev:consumer": "ts-node src/consumer.index.ts",
+    "dev:producer": "ts-node src/producer.index.ts",
+    "kafka:state": "docker ps",
+    "kafka:start": "docker-compose up -d",
+    "kafka:stop": "docker-compose down"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/kafkajs": "^1.9.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}

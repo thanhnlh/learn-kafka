@@ -1,10 +1,24 @@
 {
   "name": "learn-kafka",
   "version": "1.0.0",
-  "main": "dist/consumer.index.js",
-  "scripts": {    
-    "dev:consumer": "ts-node src/consumer.index.ts",
-    "dev:producer": "ts-node src/producer.index.ts",
+  "scripts": {
+    "dev:consumer-groups": "concurrently \"npm run dev:producer\" \"npm run dev:consumer\" \"npm run dev:consumer-2\"",
+    "dev:partition": "concurrently \"npm run dev:producer-partition\" \"npm run dev:consumer-partition\" \"npm run dev:consumer-partition-2\"",
+    "dev:streams": "concurrently \"npm run dev:producer-streams\" \"npm run dev:stream-streams\" \"npm run dev:consumer-streams\"",
+    
+    "dev:consumer-2": "ts-node src/kafka-consumer-groups/kafka.consumer-2.ts",
+    "dev:consumer": "ts-node src/kafka-consumer-groups/kafka.consumer.ts",
+    "dev:producer": "ts-node src/kafka-consumer-groups/kafka.producer.ts",
+    
+    "dev:consumer-partition-2": "ts-node src/kafka-partition/kafka.consumer-2.ts",
+    "dev:consumer-partition": "ts-node src/kafka-partition/kafka.consumer.ts",
+    "dev:producer-partition": "ts-node src/kafka-partition/kafka.producer.ts",
+
+    "dev:consumer-streams": "ts-node src/kafka-streams/kafka.consumer.ts",
+    "dev:stream-streams": "ts-node src/kafka-streams/kafka.stream.ts",
+    "dev:producer-streams": "ts-node src/kafka-streams/kafka.producer.ts",
+
+ 
     "kafka:state": "docker ps",
     "kafka:start": "docker-compose up -d",
     "kafka:stop": "docker-compose down"
@@ -14,6 +28,7 @@
   },
   "devDependencies": {
     "@types/kafkajs": "^1.9.0",
+    "concurrently": "^8.2.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
   }

@@ -1,6 +1,8 @@
-import { kafka, topic } from '../config/kafka.config';
+import { getKafka } from '../config/kafka.config';
 
-const consumer = kafka.consumer({ groupId: 'tomyum-group' });
+const topic = 'user-spending';
+const group = 'spending-group';
+const consumer = getKafka('spending-consumer').consumer({groupId: group});
 
 const run = async () => {
   try {
@@ -9,11 +11,11 @@ const run = async () => {
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
-        console.log({
-          partition,
-          offset: message.offset,
-          value: message.value?.toString(),
-        });        
+        if(message.value)
+        {
+          const { user, totalSpent } = JSON.parse(message.value.toString());
+          console.log(`[Consumer] ${user} has spent a total of ${totalSpent}`);
+        }        
       },
     });
 
@@ -43,4 +45,5 @@ const run = async () => {
   }
 };
 
-export default run;
+run().catch(console.error);
+//export default run;

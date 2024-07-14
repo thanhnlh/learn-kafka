@@ -112,17 +112,20 @@ services:
 
 #### 2.2: Run Kafka
 
-To download Docker imagess and start the Kafka and Zookeeper services in detached mode 
+To download Docker imagess and start the Kafka and Zookeeper services in detached mode
+
 ```
 docker-compose up -d
 ```
 
 To check the Kafka and Zookeeper containers status
+
 ```
 docker ps
 ```
 
 To stop and remove the Kafka and Zookeeper containers
+
 ```
 docker-compose down
 ```
@@ -234,32 +237,191 @@ const run = async () => {
 run().catch(console.error);
 ```
 
-### 3.8 Code Examples
+## 4. Consumer Groups & Partitions
+
+In a Kafka consumer group, only one consumer instance will consume a particular partition at a time. This is to ensure that messages are processed in order and not duplicated. If you have multiple consumer instances in the same consumer group, Kafka will assign each partition to only one consumer instance within the group.
+
+To ensure that both consumers are actively processing messages, you can:
+
+Use different consumer groups for each consumer if you want them to process the same messages independently. Ensure that the topic has enough partitions so that each consumer can be assigned at least one partition.
+
+### Consumer Groups
+
+If you want each consumer to process all messages independently, you should assign different group IDs to each consumer.
+
+Consumer 1 Code
+
+```
+import { kafka, topic } from '../config';
+
+const consumer = kafka.consumer({ groupId: 'consumer1-group' });
+
+const run = async () => {
+  await consumer.connect();
+  await consumer.subscribe({ topic, fromBeginning: true });
+
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      console.log(`[Consumer 1] Received message: ${message.value.toString()}`);
+    },
+  });
+};
+
+run().catch(console.error);
+```
+
+Consumer 2 Code
+
+```
+import { kafka, topic } from '../config';
+
+const consumer = kafka.consumer({ groupId: 'consumer2-group' });
+
+const run = async () => {
+  await consumer.connect();
+  await consumer.subscribe({ topic, fromBeginning: true });
+
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      console.log(`[Consumer 2] Received message: ${message.value.toString()}`);
+    },
+  });
+};
+
+run().catch(console.error);
+```
+
+### Partitions
+
+If you want both consumers to work as part of the same consumer group but process messages in parallel, make sure the topic has at least as many partitions as the number of consumers.
+
+Consumer 1 Code
+
+```
+import { kafka, topic } from '../config';
+
+const consumer = kafka.consumer({ groupId: 'consumer-group' });
+
+const run = async () => {
+  await consumer.connect();
+  await consumer.subscribe({ topic, fromBeginning: true });
+
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      console.log(`[Consumer 1] Received message: ${message.value.toString()} from partition ${partition}`);
+    },
+  });
+};
+
+run().catch(console.error);
+```
+
+Consumer 2
+
+```
+import { kafka, topic } from '../config';
+
+const consumer = kafka.consumer({ groupId: 'consumer-group' });
+
+const run = async () => {
+  await consumer.connect();
+  await consumer.subscribe({ topic, fromBeginning: true });
+
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      console.log(`[Consumer 2] Received message: ${message.value.toString()} from partition ${partition}`);
+    },
+  });
+};
+
+run().catch(console.error);
+```
+
+## 5. Kafka Streams
+
+Kafka Streams is a powerful library for building real-time, event-driven applications using Apache Kafka. It allows you to process data in real-time, applying transformations, aggregations, joins, and other operations on the streams of data.
+
+### Key Concepts
+
+1. Stream: An unbounded, continuously updating sequence of records (key-value pairs).
+2. Table: A collection of key-value pairs, where each key is unique and holds the latest value. It's essentially a snapshot of the latest state of the data.
+3. KStream: Represents an unbounded stream of data where records are key-value pairs.
+4. KTable: Represents a table of changelog stream, where each record represents an update to a key.
+5. Topology: The logical representation of the stream processing application. It consists of various stream processors and state stores.
+
+### Common Operations
+
+1. Transformation: Mapping, filtering, grouping, and aggregating data.
+2. Joining: Combining two streams or a stream with a table based on keys.
+3. Windowing: Grouping records into windows for time-based processing.
+
+
+## 6. Code Examples
+
+### 6.1 Kafka Consumers and Producers
 
 Within the src folder, you'll find code examples demonstrating how consumers and producers interact with Kafka.
 
-In your package.json, you have defined scripts to manage Docker containers and run Kafka consumers and producers using TypeScript with ts-node:
+#### Kafka Consumer Groups
 
-```
-"scripts": {
-  "dev:consumer": "ts-node src/consumer.index.ts",
-  "dev:producer": "ts-node src/producer.index.ts",
-  "kafka:state": "docker ps",
-  "kafka:start": "docker-compose up -d",
-  "kafka:stop": "docker-compose down"
-}
-```
+To run Kafka consumer groups concurrently:
 
-Explanation:
+```npm run dev:consumer-groups```
 
-`dev:consumer`: Runs the Kafka consumer located at src/consumer.index.ts using TypeScript and ts-node.
+This script executes:
 
-`dev:producer`: Runs the Kafka producer located at src/producer.index.ts using TypeScript and ts-node.
+* `npm run dev:producer`
+* `npm run dev:consumer`
+* `npm run dev:consumer-2`
 
-`kafka:state`: Checks the status of Docker containers running Kafka (docker ps).
+Each command starts a producer and two different consumers.
 
-`kafka:start`: Starts Docker containers for Kafka using docker-compose up -d.
+#### Kafka Partitions
 
-`kafka:stop`: Stops and removes Docker containers for Kafka using docker-compose down.
+To run Kafka consumers and producers for partitioned topics:
 
-These scripts facilitate the setup, execution, and management of Kafka consumers and producers in your development environment.
+```npm run dev:partition```
+
+This script executes:
+
+* `npm run dev:producer-partition`
+* `npm run dev:consumer-partition`
+* `npm run dev:consumer-partition-2`
+
+It runs a producer and two consumers handling partitioned topics.
+
+#### Kafka Streams
+
+To run Kafka streams using Kafka Streams API:
+
+```npm run dev:streams```
+
+This script executes:
+
+* `npm run dev:producer-streams`
+* `npm run dev:stream-streams`
+* `npm run dev:consumer-streams`
+
+It runs a producer, a stream processor, and a consumer using Kafka Streams API.
+
+### 6.2 Docker and Kafka Management
+
+#### Docker Container Management
+
+To check the state of Docker containers running Kafka:
+
+```npm run kafka:state```
+
+#### Start Kafka
+
+To start Docker containers for Kafka:
+
+```npm run kafka:start```
+
+#### Stop Kafka
+
+To stop and remove Docker containers for Kafka:
+
+```npm run kafka:stop```
+
+These scripts simplify the setup, execution, and management of Kafka consumers and producers in your development environment using TypeScript and ts-node.
